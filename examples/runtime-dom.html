@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script src="../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script>
+  <script src="../node_modules/@vue/reactivity"></script>
+  <div id="app"></div>
+  <script>
+    // runtimeDom <- runtimeCore <- reactivity
+    const { createApp, h , reactive} = VueRuntimeDOM
+    const app  = {
+      props: {
+        name: String
+      },
+      setup(props) {
+        console.log('props.name', props.name)
+        const state = reactive({
+          name: '付卓宁'
+        })
+        // 当引用的变量的值发生变化的时候render函数会重新执行所以render函数是一个effect
+        return function render() { // 参数是一个代理对象 里面会合并props和setup返回的代理对象等
+          return h('div', {style: {color: 'red' } }, `hello world ${state.name}`)
+        }
+      },
+      // render(proxyData) { // 参数是一个代理对象 里面会合并props和setup返回的代理对象等
+      //   return h('div', {style: {color: 'red' } }, `hello world ${proxyData.state.name}`)
+      // }
+    }
+    // 参数1 是组件 以哪一个组件作为入口 参数2 属性 propsData 参数一组件需要的属性
+    createApp(app).mount('#app')
+  </script>
+</body>
+</html>

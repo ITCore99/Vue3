@@ -1,0 +1,20 @@
+{
+  "name": "@vue/reactivity",
+  "version": "1.0.0",
+  "main是给node(commonJs)引入入口": true,
+  "main": "index.js",
+  "module是给es模块和webpack引用的入口他们默认会查找这个": true,
+  "module": "dist/reactivity.esm-bundler.js",
+  "buildOptions是一个自定义属性 包含了一些构建的选项": true,
+  "buildOptions": {
+    "这个name将会在打包的时候作为这个包的全局名称暴露出去，也就是我们通过cdn去引用的时候的名字": true,
+    "name": "VueReactivity",
+    "自定义的formats属性 将用来告诉rollup将此包打包成几种格式: cjs(node) esm-bundler(esm) global(全局)": true,
+    "formats": [
+      "cjs",
+      "esm-bundler",
+      "global"
+    ]
+  },
+  "license": "MIT"
+}

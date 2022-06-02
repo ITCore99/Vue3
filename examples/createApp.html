@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>createApp</title>
+</head>
+<body>
+  <script src="../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { createApp, h , reactive, ref} = VueRuntimeDOM
+    // 创建一个组件
+    const app  = {
+      setup(props, context) {
+        const state = reactive({
+          name: '付卓宁'
+        })
+        const flag = ref(true)
+        setTimeout(() => {
+          flag.value = false
+        }, 3000)
+        const hanleClick = () => { 
+          // 这里由于我们是同步更新所以这里变化了三次 所以这里需要处理下 应该降低跟心频率
+          state.name = '付卓宁 变化了'
+          state.name = '付卓宁 变化了2'
+          state.name = '付卓宁 变化了'
+        }
+        return () => {
+          // return h('div', {style: {color: 'red' }, onClick: hanleClick },  h('span', {style: {color: 'green'}}, `${state.name} 奥利给`))
+          return flag.value ? 
+            h('div', { style: {color: 'red'}}, [
+              h('li', { key: 'a'}, 'A'),
+              h('li', { key: 'b'}, 'B'),
+              h('li', { key: 'c'},  'C'),
+              h('li', { key: 'd'}, 'D'),
+            ])
+            : h('div', {style: {color: 'blue'}}, [
+              h('li', { key: 'a'}, 'A'),
+              h('li', { key: 'b'}, 'B'),
+              h('li', { key: 'c'}, 'C'),
+              h('li', { key: 'd'}, 'D'),
+              h('li', { key: 'h'}, 'H'),
+              h('li', { key: 'f'}, 'F'),
+            ])
+        }
+      }
+    }
+    // 参数1 是组件 以哪一个组件作为入口 参数2 属性 propsData 参数一组件需要的属性
+    createApp(app, {name: '付卓宁'}).mount('#app')
+  </script>
+</body>
+</html>

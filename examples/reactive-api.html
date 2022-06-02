@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reactive test  document</title>
+</head>
+<body>
+  <script src="../node_modules/@vue/reactivity/dist/reactivity.global.js"></script>
+  <script>
+    const { reactive, shallowReactive, readonly, shallowReadonly } = VueReactivity
+    const obj = {
+      name: 'fuzhuoning',
+      firends: {
+        age: 10
+      }
+    }
+    const proxy = shallowReadonly(obj)
+    proxy.name = 'Jiayou '
+    console.log('proxy=>',  proxy.firends)
+  </script>
+</body>
+</html>

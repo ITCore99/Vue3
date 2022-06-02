@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>computed</title>
+</head>
+<body>
+  <script src="../node_modules/@vue/reactivity/dist/reactivity.global.js"></script>
+  <script>
+     const { computed, reactive, effect } = VueReactivity
+     const wife = reactive({
+       age: 18
+     })
+     const computedAge = computed(() => {
+       console.log('computeAge runner 执行了')
+       return wife.age + 10
+     })
+    //  console.log(computedAge.value)
+    //  // 第二次取值 只执行了一遍 使用了缓存
+    //  console.log(computedAge.value)
+    //  wife.age = 100
+    //  // 第三次取值
+    //  console.log(computedAge.value)
+    // 在effect中访问计算属性
+     effect(() => { 
+       console.log(computedAge.value)
+     })
+     wife.age = 500
+  </script>
+</body>
+</html>
