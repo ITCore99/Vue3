@@ -31,6 +31,16 @@ export function setupComponent(instance) {
     setupStatefulComponent(instance)
   }
 }
+// 缓存当前的组件实例
+export let currentInstance = null
+// 设置当前的instance
+export function setCurrentIntance(instance) {
+  currentInstance = instance
+}
+// 为用户暴露的instance 方法
+export function getCurrentInstance () {
+  return currentInstance
+}
 function setupStatefulComponent(instance) {
   // 1、属性的代理 方便用户访问 传递给render函数的参数  
   // 我什么不直接代理instance 是因为自己需要更新instance上的属性 并不需要走代理
@@ -39,8 +49,11 @@ function setupStatefulComponent(instance) {
   const component = instance.type
   const { setup } = component 
   if(setup) {
+    currentInstance = instance
     const setupContext = createContext(instance)
     const setupResult = setup(instance.props, setupContext)
+    // 组件setup 执行完成之后将当前缓存的组件进行重置 保证生命周期只能在setup中使用
+    currentInstance = instance
     // 主要进行处理setup 返回值
     handleSetupResult(instance, setupResult)
   } else {

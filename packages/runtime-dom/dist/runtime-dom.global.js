@@ -468,6 +468,16 @@ var VueRuntimeDOM = (function (exports) {
           setupStatefulComponent(instance);
       }
   }
+  // 缓存当前的组件实例
+  let currentInstance = null;
+  // 设置当前的instance
+  function setCurrentIntance(instance) {
+      currentInstance = instance;
+  }
+  // 为用户暴露的instance 方法
+  function getCurrentInstance() {
+      return currentInstance;
+  }
   function setupStatefulComponent(instance) {
       // 1、属性的代理 方便用户访问 传递给render函数的参数  
       // 我什么不直接代理instance 是因为自己需要更新instance上的属性 并不需要走代理
@@ -476,8 +486,11 @@ var VueRuntimeDOM = (function (exports) {
       const component = instance.type;
       const { setup } = component;
       if (setup) {
+          currentInstance = instance;
           const setupContext = createContext(instance);
           const setupResult = setup(instance.props, setupContext);
+          // 组件setup 执行完成之后将当前缓存的组件进行重置 保证生命周期只能在setup中使用
+          currentInstance = instance;
           // 主要进行处理setup 返回值
           handleSetupResult(instance, setupResult);
       }
@@ -512,6 +525,40 @@ var VueRuntimeDOM = (function (exports) {
           instance.setupState = setupResult;
       }
       finishComponentSetup(instance);
+  }
+
+  const onBeforeMount = createHook("bm" /* BEFORE_MOUNT */);
+  const onMounted = createHook("m" /* MOUNTED */);
+  const onBeforeUpdate = createHook("bu" /* BEFORE_UPDATE */);
+  const onUpdated = createHook("u" /* UPDATE */);
+  const onBeforeUnmount = createHook("bum" /* BEFORE_UNMOUNT */);
+  const omUnmounted = createHook("um" /* UNMOUNTED */);
+  // 创建钩子函数
+  function createHook(lifecycle) {
+      return function (hook, target = currentInstance) {
+          // 为当前实例增加对的生命周期
+          injectHook(lifecycle, hook, target);
+      };
+  }
+  function injectHook(type, hook, target) {
+      if (!currentInstance) {
+          console.warn('生命周期钩子' + 'hook' + '只能用到setup函数中');
+      }
+      else {
+          const hooks = target[type] || (target[type] = []); // 数组有可能是多个相同的生命周期
+          const warp = () => {
+              setCurrentIntance(target); // currentInstance 是自己的 target 被保存到当前这个wrap的作用域下面 这样就保证了当孩子挂载完之后setcurrent指向孩子组件 执行父组件mounted的时候currentInstance不正确的问题
+              hook.call(target);
+              setCurrentIntance(null);
+          };
+          hooks.push(warp); // 保存的时候就知道当前生命周期是那个实例的
+      }
+  }
+  // 调用函数
+  function invokeArrayFns(fns) {
+      for (let i = 0; i < fns.length; i++) { // 和vue2 类似调用时让函数一次执行
+          fns[i]();
+      }
   }
 
   // 自定义我们的effect执行策略
@@ -562,6 +609,10 @@ var VueRuntimeDOM = (function (exports) {
           instance.update = effect(function componentEffect() {
               if (!instance.isMounted) {
                   // 这是初次渲染
+                  let { bm, m } = instance;
+                  if (bm) {
+                      invokeArrayFns(bm); // 执行beforMount 生命周期
+                  }
                   const proxyToUser = instance.proxy;
                   // 组件render初次渲染的vnode 
                   // 在vue3中组件就叫vnode(是对组件的描述) 组件的真正渲染内容叫做subtree  对应vue2的 $vnode 和_vnoode 
@@ -569,13 +620,23 @@ var VueRuntimeDOM = (function (exports) {
                   // 初始化字树 用render函数返回值继续渲染
                   patch(null, subTree, container);
                   instance.isMounted = true;
+                  if (m) { // 有问题 mounted 要求是子组件挂载完毕之后才会调用自己 这里可能子组件还没挂载完毕
+                      invokeArrayFns(m); // 执行Mounted 生命周期
+                  }
               }
               else {
                   // 这是更新逻辑 依赖发生变化 则开始进行更新逻辑(diff算法)
+                  let { bu, u } = instance;
+                  if (bu) {
+                      invokeArrayFns(bu); // 执行beforUpdate 生命周期
+                  }
                   const proxyToUser = instance.proxy;
                   const prevTree = instance.subTree; // 上一次的旧树
                   const nextTree = instance.render.call(proxyToUser, proxyToUser); // 重新执行render方法创建获取到新树的vnode
                   patch(prevTree, nextTree, container); // 进行patch方法的新老节点比对更新页面
+                  if (u) {
+                      invokeArrayFns(u); // 执行onUpdated 生命周期
+                  }
               }
           }, {
               scheduler: (effect) => {
@@ -1104,7 +1165,15 @@ var VueRuntimeDOM = (function (exports) {
   exports.createApp = createApp;
   exports.createRenderer = createRenderer;
   exports.effect = effect;
+  exports.getCurrentInstance = getCurrentInstance;
   exports.h = h;
+  exports.invokeArrayFns = invokeArrayFns;
+  exports.omUnmounted = omUnmounted;
+  exports.onBeforeMount = onBeforeMount;
+  exports.onBeforeUnmount = onBeforeUnmount;
+  exports.onBeforeUpdate = onBeforeUpdate;
+  exports.onMounted = onMounted;
+  exports.onUpdated = onUpdated;
   exports.reactive = reactive;
   exports.readonly = readonly;
   exports.ref = ref;

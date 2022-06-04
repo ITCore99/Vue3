@@ -1,6 +1,7 @@
 import { effect } from "@vue/reactivity"
 import { isArray, ShapeFlags } from "@vue/shared"
 import { createAppApi } from "./apiCreateApp"
+import { invokeArrayFns } from "./apiLifecycle"
 import { createInitialInstance, setupComponent } from "./component"
 import { queueJob } from "./sechduler"
 import { normalizeVNode, TEXT } from "./vnode"
@@ -32,6 +33,10 @@ export function createRenderer(renderOptions) { // 告诉core如何进行渲染(
     instance.update = effect(function componentEffect(){ // 每一个组件都有一个effect 进行组件的更新 vue3是组件级的更新 属性变化会重新执行组件的effect来进行更新
       if(!instance.isMounted) {
       // 这是初次渲染
+      let { bm, m } = instance
+      if(bm) { 
+        invokeArrayFns(bm) // 执行beforMount 生命周期
+      }
       const proxyToUser = instance.proxy
       // 组件render初次渲染的vnode 
       // 在vue3中组件就叫vnode(是对组件的描述) 组件的真正渲染内容叫做subtree  对应vue2的 $vnode 和_vnoode 
@@ -39,12 +44,22 @@ export function createRenderer(renderOptions) { // 告诉core如何进行渲染(
       // 初始化字树 用render函数返回值继续渲染
       patch(null, subTree, container)
       instance.isMounted = true
+      if(m) {// 有问题 mounted 要求是子组件挂载完毕之后才会调用自己 这里可能子组件还没挂载完毕
+        invokeArrayFns(m) // 执行Mounted 生命周期
+      }
       } else {
         // 这是更新逻辑 依赖发生变化 则开始进行更新逻辑(diff算法)
+        let { bu, u } = instance
+        if(bu) { 
+          invokeArrayFns(bu) // 执行beforUpdate 生命周期
+        }
         const proxyToUser = instance.proxy
         const prevTree = instance.subTree // 上一次的旧树
         const nextTree =  instance.render.call(proxyToUser, proxyToUser) // 重新执行render方法创建获取到新树的vnode
         patch(prevTree, nextTree, container) // 进行patch方法的新老节点比对更新页面
+        if(u) { 
+          invokeArrayFns(u) // 执行onUpdated 生命周期
+        }
       }
     }, {
       scheduler: (effect) => { // 作用是组件数据多次更新执行一次渲染
