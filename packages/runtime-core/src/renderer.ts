@@ -186,7 +186,7 @@ export function createRenderer(renderOptions) { // 告诉core如何进行渲染(
         if(newIndex === undefined) { // 说明新的中没有需要删除
           unmount(oldChild)
         } else { // 如果找到了 则去比较新旧节点以及孩子节点 (这里比较完了之后位置有问题)
-          // 新和旧的关系 索引关系
+          // 新和旧的关系 索引关系(新孩子下标老孩子索引是数组中的值)
           newIndexToOldIndexMap[newIndex - s2] = i + 1 // 减去s2是为了 将索引相对 s2的下标  为什么需要i+1因为如果正好为0的时候正好和我们的初始值一样，为了保证不一样我们需要+1 到时使用的时候记得减去即可
           patch(oldChild, c2[newIndex], el)
         }
@@ -194,7 +194,7 @@ export function createRenderer(renderOptions) { // 告诉core如何进行渲染(
       // [5 ,3,4, 0 ] => [1, 2] => []
       const increasingNewIndexSequence = getSequence(newIndexToOldIndexMap) //求出最常的递增索引序列
       let j = increasingNewIndexSequence.length - 1 // 取出最后一项
-      for(let i = toBePatched - 1 ; i >= 0; i-- ) { // 插入新增的元素 这里为什么是倒叙 是因为这样的话我们就可以插入的前一个元素作为要插入下一个元素的参照物
+      for(let i = toBePatched - 1 ; i >= 0; i-- ) {  // 插入新增的元素 这里为什么是倒叙 是因为这样的话我们就可以插入的前一个元素作为要插入下一个元素的参照物
         const currentIndex = s2 + i // 之前减去过s2 现在复原找到元素原本的位置 如例子所属的话就是h的索引
         let child = c2[currentIndex] 
         let anchor = currentIndex + 1  < c2.length ? c2[currentIndex + 1].el : null// 获取下一项 如果存在则需要插入到下一项的前面如果不存在只需要插入到最后即可
